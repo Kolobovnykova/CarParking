@@ -6,7 +6,9 @@ namespace CarParking
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            var parking = Parking.GetInstance();
+
+            Console.WriteLine("Hello Parking!");
             Console.ReadKey();
         }
     }
