@@ -2,6 +2,10 @@
 {
     public class Car
     {
+        public int Id { get; }
+        public int Balance { get; private set; }
+        public CarType CarType { get; }
+
         public Car(int id, int balance, CarType carType)
         {
             Id = id;
@@ -9,8 +13,9 @@
             CarType = carType;
         }
 
-        public int Id { get; set; }
-        public int Balance { get; set; }
-        public CarType CarType { get; set; }
+        public void ReplenishBalance(int amount)
+        {
+            Balance = Balance + amount;
+        }
     }
 }
