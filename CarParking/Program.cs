@@ -6,12 +6,40 @@ namespace CarParking
     {
         public static void Main(string[] args)
         {
-            while (true)
-            {
-                Console.WriteLine("What would you like to do?\n'1' - add a car to parking");
-            }
-
             var parking = Parking.GetInstance();
+
+            do
+            {
+                Console.WriteLine(" What would you like to do?\n '1' - add a car to parking" +
+                                  "\n '2' remove car from parking" +
+                                  "\n press escape to exit application");
+
+                ConsoleKeyInfo enteredKey = Console.ReadKey();
+                
+                switch (enteredKey.Key)
+                {
+                    case ConsoleKey.D1:
+
+                        // enter car settings
+                        // console.read settings
+                        var car1 = new Car(1, -100, CarType.Passenger);
+                        parking.AddCar(car1);
+                        Console.WriteLine("Added a car");
+                        break;
+                    case ConsoleKey.D2:
+                        Console.WriteLine("Removed a car");
+                        break;
+                    case ConsoleKey.Escape:
+                        return;
+                }
+           
+            }
+            while (true);
+            
+
+               
+
+           
 
             var c1 = new Car(1, -100, CarType.Passenger);
             var c2 = new Car(2, 100, CarType.Passenger);

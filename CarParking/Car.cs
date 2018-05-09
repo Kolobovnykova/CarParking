@@ -15,7 +15,7 @@
 
         public void ReplenishBalance(int amount)
         {
-            Balance = Balance + amount;
+            Balance += amount;
         }
     }
 }
