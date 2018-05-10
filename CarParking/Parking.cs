@@ -112,5 +112,10 @@ namespace CarParking
 
             return Cars.Last().Id + 1;
         }
+
+        public void ShowParkingBalance()
+        {
+            Console.WriteLine($"Parking balance is: {Balance}");
+        }
     }
 }

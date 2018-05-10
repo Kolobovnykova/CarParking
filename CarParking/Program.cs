@@ -9,6 +9,7 @@ namespace CarParking
                                     "\n '3' - add funds to car's balance" +
                                     "\n '4' - show list of parked cars" +
                                     "\n '5' - show available spaces" +
+                                    "\n '6' - show parking balance" +
                                     "\n 'Esc' - press escape to exit application \n";
 
         private const string addCarMenu = "You can add cars with types:\n '1' - passenger" +
@@ -88,6 +89,8 @@ namespace CarParking
                         break;
 
                     case ConsoleKey.D6:
+                        Console.Clear();
+                        parking.ShowParkingBalance();
                         break;
                     case ConsoleKey.D7:
                         break;
