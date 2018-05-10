@@ -4,7 +4,7 @@
     {
         public int Id { get; }
         public double Balance { get; private set; }
-        private CarType CarType { get; }
+        public CarType CarType { get; }
 
         public Car(int id, double balance, CarType carType)
         {

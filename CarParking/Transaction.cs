@@ -11,8 +11,8 @@ namespace CarParking
             Withdrawal = withdrawal;
         }
 
-        public DateTime DateTime { get; set; }
-        public int CarId { get; set; }
-        public int Withdrawal { get; set; }
+        public DateTime DateTime { get; }
+        public int CarId { get; }
+        public int Withdrawal { get; }
     }
 }

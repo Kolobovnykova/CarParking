@@ -65,6 +65,8 @@ namespace CarParking
                 Console.WriteLine("Press any key to continue.");
                 Console.ReadKey();
             } while (enteredKey.Key != ConsoleKey.Escape);
+            
+            parking.StopTimer();
         }
 
         private void AddCar()
@@ -89,7 +91,7 @@ namespace CarParking
                     carType = CarType.Motorcycle;
                     break;
                 default:
-                    Console.WriteLine("\nNo such type of car, back to menu.");
+                    Console.WriteLine("\nSuch type of car doesn't exist, back to menu.");
                     return;
             }
 
@@ -99,7 +101,7 @@ namespace CarParking
         private void RemoveCar()
         {
             Console.Clear();
-            Console.WriteLine("Enter id of the car.");
+            Console.WriteLine("Removing an existing a car.\nEnter the id.");
             int.TryParse(Console.ReadLine(), out int carIdRemove);
             parking.RemoveCar(carIdRemove);
         }

@@ -1,21 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CarParking
 {
     public class Parking
     {
         private static Parking instance;
+        private Timer timer;
 
         public List<Car> Cars { get; private set; }
-        private List<Transaction> Transactions { get; set; }
-        public int Balance { get; private set; }
+        private List<Transaction> Transactions { get; }
+        public double Balance { get; private set; }
 
         private Parking()
         {
             Cars = new List<Car>();
             Transactions = new List<Transaction>();
+            timer = new Timer(PaymentAction, new object(), 0, Settings.Timeout);
         }
 
         public static Parking GetInstance()
@@ -47,15 +51,20 @@ namespace CarParking
         public void RemoveCar(int carId)
         {
             var car = Cars.FirstOrDefault(x => x.Id == carId);
-            if (car != null && car.Balance >= 0)
-            {
-                Cars.Remove(car);
-                Console.WriteLine($"Removed car: {car}");
-            }
-            else
+            if (car == null)
             {
                 Console.WriteLine("Invalid Id. No cars with such Id found.");
+                return;
             }
+
+            if (car.Balance < 0)
+            {
+                Console.WriteLine($"Can't remove car with id {carId}, it has negative balance: {car.Balance}.");
+                return;
+            }
+
+            Cars.Remove(car);
+            Console.WriteLine($"Removed car: {car}");
         }
 
         public int GetFreeSpacesNumber()
@@ -116,6 +125,27 @@ namespace CarParking
         public void ShowParkingBalance()
         {
             Console.WriteLine($"Parking balance is: {Balance}");
+        }
+
+        private async void PaymentAction(object obj)
+        {
+            await Task.Run(() =>
+            {
+                Cars.ForEach(car =>
+                {
+                    if (Settings.Prices.TryGetValue(car.CarType, out var price))
+                    {
+                        double amountToWithdraw = car.Balance >= price ? price : price * Settings.Fine;
+                        car.WithdrawBalance(amountToWithdraw);
+                        Balance += amountToWithdraw;
+                    }
+                });
+            });
+        }
+
+        public void StopTimer()
+        {
+            timer.Dispose();
         }
     }
 }
