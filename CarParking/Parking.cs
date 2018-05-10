@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CarParking
 {
@@ -10,17 +12,8 @@ namespace CarParking
         private List<Transaction> Transactions { get; set; }
         public int Balance { get; private set; }
 
-        public int Timeout { get; }
-        public Dictionary<CarType, int> Prices { get; }
-        public int ParkingSpace { get; }
-        public int Fine { get; }
-
         private Parking()
         {
-            Timeout = Settings.Timeout;
-            Prices = Settings.Prices;
-            ParkingSpace = Settings.ParkingSpace;
-            Fine = Settings.Fine;
             Cars = new List<Car>();
             Transactions = new List<Transaction>();
         }
@@ -35,30 +28,89 @@ namespace CarParking
             return instance;
         }
 
-        public void AddCar(Car car)
+        public void AddCar(CarType carType)
         {
-            if (Cars.Count != ParkingSpace && !Cars.Contains(car))
+            if (Cars.Count != Settings.ParkingSpace)
             {
+                var car = new Car(AssignId(), 0, carType);
+
+                Console.WriteLine($"Added car {car}");
+
                 Cars.Add(car);
+            }
+            else
+            {
+                Console.WriteLine("Not enough space to place a car.");
             }
         }
 
-        public void RemoveCar(Car car)
+        public void RemoveCar(int carId)
         {
-            if (Cars.Contains(car) && car.Balance > 0)
+            var car = Cars.FirstOrDefault(x => x.Id == carId);
+            if (car != null && car.Balance >= 0)
             {
                 Cars.Remove(car);
+                Console.WriteLine($"Removed car: {car}");
+            }
+            else
+            {
+                Console.WriteLine("Invalid Id. No cars with such Id found.");
             }
         }
 
         public int GetFreeSpacesNumber()
         {
-            return ParkingSpace - Cars.Count;
+            return Settings.ParkingSpace - Cars.Count;
         }
 
         public int GetTakenSpacesNumber()
         {
             return Cars.Count;
+        }
+
+        public void ShowParkedCars()
+        {
+            if (Cars.Count == 0)
+            {
+                Console.WriteLine("No cars at the parking.");
+            }
+            else
+            {
+                Console.WriteLine("List of cars parked:");
+                foreach (var car in Cars)
+                {
+                    Console.WriteLine(car);
+                }
+            }
+        }
+
+        public void ReplenishCarBalance(int carId, double amount)
+        {
+            if (CarExistInParking(carId))
+            {
+                var car = Cars.FirstOrDefault(x => x.Id == carId);
+                car.ReplenishBalance(amount);
+                Console.WriteLine("Added to car balance.");
+            }
+            else
+            {
+                Console.WriteLine("Invalid Id. No cars with such Id found.");
+            }
+        }
+
+        private bool CarExistInParking(int carId)
+        {
+            return Cars.Any(cus => cus.Id == carId);
+        }
+
+        private int AssignId()
+        {
+            if (Cars.Count == 0)
+            {
+                return 1;
+            }
+
+            return Cars.Last().Id + 1;
         }
     }
 }
