@@ -18,7 +18,12 @@ namespace CarParking
                                           "\n '4' - motorcycle" +
                                           "\n 'Esc' - press escape to return to main menu \n";
 
-        private readonly Parking parking = Parking.GetInstance();
+        private readonly Parking parking;
+
+        public Menu()
+        {
+            parking = Parking.GetInstance();
+        }
 
         public void SelectMenu()
         {
@@ -32,32 +37,7 @@ namespace CarParking
                 switch (enteredKey.Key)
                 {
                     case ConsoleKey.D1:
-                        Console.Clear();
-                        Console.WriteLine(addCarMenu);
-                        ConsoleKeyInfo enteredKeyCar = Console.ReadKey();
-                        CarType carType;
-
-                        switch (enteredKeyCar.Key)
-                        {
-                            case ConsoleKey.D1:
-                                carType = CarType.Passenger;
-                                break;
-                            case ConsoleKey.D2:
-                                carType = CarType.Truck;
-                                break;
-                            case ConsoleKey.D3:
-                                carType = CarType.Passenger;
-                                break;
-                            case ConsoleKey.D4:
-                                carType = CarType.Motorcycle;
-                                break;
-                            default:
-                                Console.WriteLine("\nNo such type of car, back to menu.\nPress any key to continue");
-                                Console.ReadKey();
-                                continue;
-                        }
-
-                        parking.AddCar(carType);
+                        AddCar();
                         break;
                     case ConsoleKey.D2:
                         RemoveCar();
@@ -87,6 +67,35 @@ namespace CarParking
             } while (enteredKey.Key != ConsoleKey.Escape);
         }
 
+        private void AddCar()
+        {
+            Console.Clear();
+            Console.WriteLine(addCarMenu);
+            ConsoleKeyInfo enteredKeyCar = Console.ReadKey();
+            CarType carType;
+
+            switch (enteredKeyCar.Key)
+            {
+                case ConsoleKey.D1:
+                    carType = CarType.Passenger;
+                    break;
+                case ConsoleKey.D2:
+                    carType = CarType.Truck;
+                    break;
+                case ConsoleKey.D3:
+                    carType = CarType.Passenger;
+                    break;
+                case ConsoleKey.D4:
+                    carType = CarType.Motorcycle;
+                    break;
+                default:
+                    Console.WriteLine("\nNo such type of car, back to menu.");
+                    return;
+            }
+
+            parking.AddCar(carType);
+        }
+
         private void RemoveCar()
         {
             Console.Clear();
@@ -104,13 +113,13 @@ namespace CarParking
             double.TryParse(Console.ReadLine(), out double amount);
             parking.ReplenishCarBalance(carIdRep, amount);
         }
-        
+
         private void ShowListOfParkedCars()
         {
             Console.Clear();
             parking.ShowParkedCars();
         }
-        
+
         private void ShowNumberOfFreeSpaces()
         {
             Console.Clear();
