@@ -3,19 +3,29 @@
     public class Car
     {
         public int Id { get; }
-        public int Balance { get; private set; }
-        public CarType CarType { get; }
+        public double Balance { get; private set; }
+        private CarType CarType { get; }
 
-        public Car(int id, int balance, CarType carType)
+        public Car(int id, double balance, CarType carType)
         {
             Id = id;
             Balance = balance;
             CarType = carType;
         }
 
-        public void ReplenishBalance(int amount)
+        public void ReplenishBalance(double amount)
         {
             Balance += amount;
+        }
+        
+        public void WithdrawBalance(double amount)
+        {
+            Balance -= amount;
+        }
+
+        public override string ToString()
+        {
+            return $"Id: {Id}, type: {CarType}, balance: {Balance}";
         }
     }
 }
