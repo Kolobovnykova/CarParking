@@ -1,4 +1,6 @@
 ﻿using System;
+using CarParking.Entities;
+using CarParking.Helpers;
 
 namespace CarParking
 {
@@ -144,7 +146,7 @@ namespace CarParking
         private void ShowParkingBalance()
         {
             Console.Clear();
-            parking.ShowParkingBalance();
+            Console.WriteLine($"Parking balance is: {parking.GetParkingBalance()}");
         }
         
         private void ShowParkingIncomeForPastMinute()

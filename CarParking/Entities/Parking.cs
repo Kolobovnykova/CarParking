@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CarParking
+namespace CarParking.Entities
 {
     public class Parking
     {
@@ -39,6 +38,8 @@ namespace CarParking
 
             return instance;
         }
+        
+        public double GetParkingBalance() => Balance;
 
         public void AddCar(CarType carType, double balance)
         {
@@ -130,11 +131,6 @@ namespace CarParking
             return Cars.Last().Id + 1;
         }
 
-        public void ShowParkingBalance()
-        {
-            Console.WriteLine($"Parking balance is: {Balance}");
-        }
-
         public double GetParkingIncomeForPastMinute()
         {
             var income = Transactions.Where(t => t.TransactionTime > DateTime.Now.AddMinutes(-1))
@@ -175,6 +171,7 @@ namespace CarParking
         public void StopTimers()
         {
             paymentTimer.Dispose();
+            logTimer.Dispose();
         }
     }
 }

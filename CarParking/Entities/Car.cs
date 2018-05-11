@@ -1,4 +1,4 @@
-﻿namespace CarParking
+﻿namespace CarParking.Entities
 {
     public class Car
     {
