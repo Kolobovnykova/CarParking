@@ -1,4 +1,8 @@
 ﻿using System;
+using System.IO;
+using CarParking.Entities;
+using CarParking.Exceptions;
+using CarParking.Helpers;
 
 namespace CarParking
 {
@@ -23,7 +27,10 @@ namespace CarParking
 
         public Menu()
         {
-            parking = Parking.GetInstance();
+            parking = Parking.Instance;
+            parking.CarAdded += ShowMessage;
+            parking.CarRemoved += ShowMessage;
+            parking.BalanceAdded += ShowMessage;
         }
 
         public void SelectMenu()
@@ -68,7 +75,7 @@ namespace CarParking
                 Console.WriteLine("Press any key to continue.");
                 Console.ReadKey();
             } while (enteredKey.Key != ConsoleKey.Escape);
-            
+
             parking.StopTimers();
         }
 
@@ -99,14 +106,22 @@ namespace CarParking
             }
 
             Console.WriteLine("\nAdd balance:");
-            double.TryParse(Console.ReadLine(), out double amount);
-            if (amount > 0)
+            try
             {
+                double amount = double.Parse(Console.ReadLine());
                 parking.AddCar(carType, amount);
             }
-            else
+            catch (FormatException)
             {
-                Console.WriteLine("Car balance should be positive. Failed to add a car.");
+                Console.WriteLine("Invalid input.");
+            }
+            catch (NotEnoughSpaceException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            catch (NegativeBalanceException e)
+            {
+                Console.WriteLine(e.Message);
             }
         }
 
@@ -114,24 +129,67 @@ namespace CarParking
         {
             Console.Clear();
             Console.WriteLine("Removing an existing a car.\nEnter the id:");
-            int.TryParse(Console.ReadLine(), out int carIdRemove);
-            parking.RemoveCar(carIdRemove);
+            try
+            {
+                var carId = int.Parse(Console.ReadLine());
+                parking.RemoveCar(carId);
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input.");
+            }
+            catch (InvalidIdException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            catch (NegativeBalanceException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private void ReplenishBalanceOfCar()
         {
             Console.Clear();
             Console.WriteLine("Replenishing balance of an existing car.\nEnter Id of the car:");
-            int.TryParse(Console.ReadLine(), out int carIdRep);
-            Console.WriteLine("Enter amount to replenish.");
-            double.TryParse(Console.ReadLine(), out double amount);
-            parking.ReplenishCarBalance(carIdRep, amount);
+            try
+            {
+                var carId = int.Parse(Console.ReadLine());
+                Console.WriteLine("Enter amount to replenish.");
+                var amount = double.Parse(Console.ReadLine());
+
+                parking.ReplenishCarBalance(carId, amount);
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input.");
+            }
+            catch (InvalidIdException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            catch (NegativeBalanceException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private void ShowListOfParkedCars()
         {
             Console.Clear();
-            parking.ShowParkedCars();
+            try
+            {
+                var cars = parking.GetListOfParkedCars();
+                Console.WriteLine("List of cars parked:");
+                foreach (var car in cars)
+                {
+                    Console.WriteLine(car);
+                }
+            }
+            catch (EmptyParkingException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private void ShowNumberOfFreeSpaces()
@@ -144,22 +202,34 @@ namespace CarParking
         private void ShowParkingBalance()
         {
             Console.Clear();
-            parking.ShowParkingBalance();
+            Console.WriteLine($"Parking balance is: {parking.GetParkingBalance()}");
         }
-        
+
         private void ShowParkingIncomeForPastMinute()
         {
             var income = parking.GetParkingIncomeForPastMinute();
             Console.Clear();
             Console.WriteLine($"Parking income for the past minute is: {income}");
         }
-        
+
         private void ShowLogFile()
         {
-            var logFile = FileHelper.ReadLogFile();
-            Console.Clear();
-            Console.WriteLine("Transactions.log content:");
-            Console.WriteLine(logFile);
+            try
+            {
+                var logFile = FileHelper.ReadLogFile();
+                Console.Clear();
+                Console.WriteLine("Transactions.log content:");
+                Console.WriteLine(logFile);
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("Log file has not been found.");
+            }
+        }
+
+        private void ShowMessage(object sender, ParkingEventArgs e)
+        {
+            Console.WriteLine($"\nCar {e.Car} has {e.Message}.");
         }
     }
 }

@@ -1,8 +1,9 @@
 ﻿using System;
+using CarParking.Interfaces;
 
-namespace CarParking
+namespace CarParking.Entities
 {
-    public class Transaction
+    public class Transaction : ITransaction
     {
         public DateTime TransactionTime { get; }
         public int CarId { get; }
