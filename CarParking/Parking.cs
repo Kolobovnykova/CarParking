@@ -1,21 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CarParking
 {
     public class Parking
     {
         private static Parking instance;
+        private readonly Timer paymentTimer;
+        private readonly Timer logTimer;
 
-        public List<Car> Cars { get; private set; }
-        private List<Transaction> Transactions { get; set; }
-        public int Balance { get; private set; }
+        private List<Car> Cars { get; }
+        private List<Transaction> Transactions { get; }
+        private double Balance { get; set; }
 
         private Parking()
         {
             Cars = new List<Car>();
+            paymentTimer = new Timer(PaymentAction, new object(), 0, Settings.Timeout);
+            logTimer = new Timer(LogTransaction, new object(), 0, Settings.TransactionTimeout);
             Transactions = new List<Transaction>();
+            if (File.Exists(Settings.PathToLogFile))
+            {
+                File.Delete(Settings.PathToLogFile);
+            }
         }
 
         public static Parking GetInstance()
@@ -28,11 +40,11 @@ namespace CarParking
             return instance;
         }
 
-        public void AddCar(CarType carType)
+        public void AddCar(CarType carType, double balance)
         {
             if (Cars.Count != Settings.ParkingSpace)
             {
-                var car = new Car(AssignId(), 0, carType);
+                var car = new Car(AssignId(), balance, carType);
 
                 Console.WriteLine($"Added car {car}");
 
@@ -47,15 +59,20 @@ namespace CarParking
         public void RemoveCar(int carId)
         {
             var car = Cars.FirstOrDefault(x => x.Id == carId);
-            if (car != null && car.Balance >= 0)
-            {
-                Cars.Remove(car);
-                Console.WriteLine($"Removed car: {car}");
-            }
-            else
+            if (car == null)
             {
                 Console.WriteLine("Invalid Id. No cars with such Id found.");
+                return;
             }
+
+            if (car.Balance < 0)
+            {
+                Console.WriteLine($"Can't remove car with id {carId}, it has negative balance: {car.Balance}.");
+                return;
+            }
+
+            Cars.Remove(car);
+            Console.WriteLine($"Removed car: {car}");
         }
 
         public int GetFreeSpacesNumber()
@@ -116,6 +133,48 @@ namespace CarParking
         public void ShowParkingBalance()
         {
             Console.WriteLine($"Parking balance is: {Balance}");
+        }
+
+        public double GetParkingIncomeForPastMinute()
+        {
+            var income = Transactions.Where(t => t.TransactionTime > DateTime.Now.AddMinutes(-1))
+                .Sum(s => s.Withdrawal);
+            return income;
+        }
+
+        private async void PaymentAction(object o)
+        {
+            await Task.Run(() =>
+            {
+                Cars.ForEach(car =>
+                {
+                    if (Settings.Prices.TryGetValue(car.CarType, out var price))
+                    {
+                        double amountToWithdraw = car.Balance >= price ? price : price * Settings.Fine;
+                        car.WithdrawBalance(amountToWithdraw);
+                        Balance += amountToWithdraw;
+                        var transaction = new Transaction(DateTime.Now, car.Id, amountToWithdraw);
+                        Transactions.Add(transaction);
+                    }
+                });
+            });
+        }
+
+        private async void LogTransaction(object o)
+        {
+            await Task.Run(() =>
+                {
+                    using (StreamWriter sw = new StreamWriter(Settings.PathToLogFile, true))
+                    {
+                        sw.WriteLine($"{DateTime.Now}, income: {GetParkingIncomeForPastMinute()}");
+                    }
+                }
+            );
+        }
+
+        public void StopTimers()
+        {
+            paymentTimer.Dispose();
         }
     }
 }
