@@ -10,13 +10,14 @@ namespace CarParking
                                     "\n '4' - show list of parked cars" +
                                     "\n '5' - show available spaces" +
                                     "\n '6' - show parking balance" +
+                                    "\n '7' - show parking income for the past 1 minute" +
+                                    "\n '8' - show transactions.log" +
                                     "\n 'Esc' - press escape to exit application \n";
 
         private const string addCarMenu = "You can add cars with types:\n '1' - passenger" +
                                           "\n '2' - truck" +
                                           "\n '3' - bus" +
-                                          "\n '4' - motorcycle" +
-                                          "\n 'Esc' - press escape to return to main menu \n";
+                                          "\n '4' - motorcycle\n";
 
         private readonly Parking parking;
 
@@ -55,8 +56,10 @@ namespace CarParking
                         ShowParkingBalance();
                         break;
                     case ConsoleKey.D7:
+                        ShowParkingIncomeForPastMinute();
                         break;
                     case ConsoleKey.D8:
+                        ShowLogFile();
                         break;
                     case ConsoleKey.D9:
                         break;
@@ -65,6 +68,8 @@ namespace CarParking
                 Console.WriteLine("Press any key to continue.");
                 Console.ReadKey();
             } while (enteredKey.Key != ConsoleKey.Escape);
+            
+            parking.StopTimers();
         }
 
         private void AddCar()
@@ -89,17 +94,26 @@ namespace CarParking
                     carType = CarType.Motorcycle;
                     break;
                 default:
-                    Console.WriteLine("\nNo such type of car, back to menu.");
+                    Console.WriteLine("\nSuch type of car doesn't exist, back to menu.");
                     return;
             }
 
-            parking.AddCar(carType);
+            Console.WriteLine("\nAdd balance:");
+            double.TryParse(Console.ReadLine(), out double amount);
+            if (amount > 0)
+            {
+                parking.AddCar(carType, amount);
+            }
+            else
+            {
+                Console.WriteLine("Car balance should be positive. Failed to add a car.");
+            }
         }
 
         private void RemoveCar()
         {
             Console.Clear();
-            Console.WriteLine("Enter id of the car.");
+            Console.WriteLine("Removing an existing a car.\nEnter the id:");
             int.TryParse(Console.ReadLine(), out int carIdRemove);
             parking.RemoveCar(carIdRemove);
         }
@@ -107,7 +121,7 @@ namespace CarParking
         private void ReplenishBalanceOfCar()
         {
             Console.Clear();
-            Console.WriteLine("Enter Id of the car.");
+            Console.WriteLine("Replenishing balance of an existing car.\nEnter Id of the car:");
             int.TryParse(Console.ReadLine(), out int carIdRep);
             Console.WriteLine("Enter amount to replenish.");
             double.TryParse(Console.ReadLine(), out double amount);
@@ -131,6 +145,21 @@ namespace CarParking
         {
             Console.Clear();
             parking.ShowParkingBalance();
+        }
+        
+        private void ShowParkingIncomeForPastMinute()
+        {
+            var income = parking.GetParkingIncomeForPastMinute();
+            Console.Clear();
+            Console.WriteLine($"Parking income for the past minute is: {income}");
+        }
+        
+        private void ShowLogFile()
+        {
+            var logFile = FileHelper.ReadLogFile();
+            Console.Clear();
+            Console.WriteLine("Transactions.log content:");
+            Console.WriteLine(logFile);
         }
     }
 }

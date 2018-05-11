@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace CarParking
 {
@@ -8,12 +10,16 @@ namespace CarParking
         public static int ParkingSpace { get; }
         public static int Fine { get; }
         public static Dictionary<CarType, int> Prices { get; }
+        public static string PathToLogFile { get; }
+        public static int TransactionTimeout { get; }
 
         static Settings()
         {
             Timeout = 3000;
+            TransactionTimeout = 60000;
             ParkingSpace = 12;
             Fine = 2;
+            PathToLogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Transactions.log");
 
             Prices = new Dictionary<CarType, int>
             {
