@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using CarParking.Entities;
 using CarParking.Exceptions;
 using CarParking.Helpers;
@@ -27,6 +28,9 @@ namespace CarParking
         public Menu()
         {
             parking = Parking.Instance;
+            parking.CarAdded += ShowMessage;
+            parking.CarRemoved += ShowMessage;
+            parking.BalanceAdded += ShowMessage;
         }
 
         public void SelectMenu()
@@ -71,7 +75,7 @@ namespace CarParking
                 Console.WriteLine("Press any key to continue.");
                 Console.ReadKey();
             } while (enteredKey.Key != ConsoleKey.Escape);
-            
+
             parking.StopTimers();
         }
 
@@ -175,7 +179,12 @@ namespace CarParking
             Console.Clear();
             try
             {
-                parking.ShowParkedCars();
+                var cars = parking.GetListOfParkedCars();
+                Console.WriteLine("List of cars parked:");
+                foreach (var car in cars)
+                {
+                    Console.WriteLine(car);
+                }
             }
             catch (EmptyParkingException e)
             {
@@ -195,20 +204,32 @@ namespace CarParking
             Console.Clear();
             Console.WriteLine($"Parking balance is: {parking.GetParkingBalance()}");
         }
-        
+
         private void ShowParkingIncomeForPastMinute()
         {
             var income = parking.GetParkingIncomeForPastMinute();
             Console.Clear();
             Console.WriteLine($"Parking income for the past minute is: {income}");
         }
-        
+
         private void ShowLogFile()
         {
-            var logFile = FileHelper.ReadLogFile();
-            Console.Clear();
-            Console.WriteLine("Transactions.log content:");
-            Console.WriteLine(logFile);
+            try
+            {
+                var logFile = FileHelper.ReadLogFile();
+                Console.Clear();
+                Console.WriteLine("Transactions.log content:");
+                Console.WriteLine(logFile);
+            }
+            catch (FileNotFoundException)
+            {
+                Console.WriteLine("Log file has not been found.");
+            }
+        }
+
+        private void ShowMessage(object sender, ParkingEventArgs e)
+        {
+            Console.WriteLine($"\nCar {e.Car} has {e.Message}.");
         }
     }
 }
