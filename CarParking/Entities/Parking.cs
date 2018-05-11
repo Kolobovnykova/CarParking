@@ -4,18 +4,20 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CarParking.Exceptions;
+using CarParking.Interfaces;
 
 namespace CarParking.Entities
 {
-    public class Parking
+    public class Parking : IParking
     {
-        private static Parking instance;
+        private static readonly Lazy<Parking> instance = new Lazy<Parking>(() => new Parking());
         private readonly Timer paymentTimer;
         private readonly Timer logTimer;
 
-        private List<Car> Cars { get; }
-        private List<Transaction> Transactions { get; }
-        private double Balance { get; set; }
+        public List<Car> Cars { get; }
+        public List<Transaction> Transactions { get; }
+        public double Balance { get; private set; }
 
         private Parking()
         {
@@ -29,15 +31,7 @@ namespace CarParking.Entities
             }
         }
 
-        public static Parking GetInstance()
-        {
-            if (instance == null)
-            {
-                instance = new Parking();
-            }
-
-            return instance;
-        }
+        public static Parking Instance => instance.Value;
         
         public double GetParkingBalance() => Balance;
 
@@ -47,13 +41,17 @@ namespace CarParking.Entities
             {
                 var car = new Car(AssignId(), balance, carType);
 
-                Console.WriteLine($"Added car {car}");
-
+                if (balance <= 0)
+                {
+                    throw new NegativeBalanceException("Car balance should be positive. Failed to add a car.");
+                }
+                
                 Cars.Add(car);
+                Console.WriteLine($"Added car {car}");
             }
             else
             {
-                Console.WriteLine("Not enough space to place a car.");
+                throw new NotEnoughSpaceException("Not enough space to place a car.");
             }
         }
 
@@ -62,14 +60,12 @@ namespace CarParking.Entities
             var car = Cars.FirstOrDefault(x => x.Id == carId);
             if (car == null)
             {
-                Console.WriteLine("Invalid Id. No cars with such Id found.");
-                return;
+                throw new InvalidIdException($"Invalid Id {carId}. No cars with such Id found.");
             }
 
             if (car.Balance < 0)
             {
-                Console.WriteLine($"Can't remove car with id {carId}, it has negative balance: {car.Balance}.");
-                return;
+                throw new NegativeBalanceException($"Can't remove car with id {carId}, it has negative balance: {car.Balance}.");
             }
 
             Cars.Remove(car);
@@ -90,15 +86,13 @@ namespace CarParking.Entities
         {
             if (Cars.Count == 0)
             {
-                Console.WriteLine("No cars at the parking.");
+                throw new EmptyParkingException("No cars at the parking.");
             }
-            else
+
+            Console.WriteLine("List of cars parked:");
+            foreach (var car in Cars)
             {
-                Console.WriteLine("List of cars parked:");
-                foreach (var car in Cars)
-                {
-                    Console.WriteLine(car);
-                }
+                Console.WriteLine(car);
             }
         }
 
@@ -112,7 +106,7 @@ namespace CarParking.Entities
             }
             else
             {
-                Console.WriteLine("Invalid Id. No cars with such Id found.");
+                throw new InvalidIdException($"Invalid Id {carId}. No cars with such Id found.");
             }
         }
 

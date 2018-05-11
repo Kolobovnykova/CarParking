@@ -1,5 +1,6 @@
 ﻿using System;
 using CarParking.Entities;
+using CarParking.Exceptions;
 using CarParking.Helpers;
 
 namespace CarParking
@@ -25,7 +26,7 @@ namespace CarParking
 
         public Menu()
         {
-            parking = Parking.GetInstance();
+            parking = Parking.Instance;
         }
 
         public void SelectMenu()
@@ -101,14 +102,22 @@ namespace CarParking
             }
 
             Console.WriteLine("\nAdd balance:");
-            double.TryParse(Console.ReadLine(), out double amount);
-            if (amount > 0)
+            try
             {
+                double amount = double.Parse(Console.ReadLine());
                 parking.AddCar(carType, amount);
             }
-            else
+            catch (FormatException)
             {
-                Console.WriteLine("Car balance should be positive. Failed to add a car.");
+                Console.WriteLine("Invalid input.");
+            }
+            catch (NotEnoughSpaceException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            catch (NegativeBalanceException e)
+            {
+                Console.WriteLine(e.Message);
             }
         }
 
@@ -116,24 +125,62 @@ namespace CarParking
         {
             Console.Clear();
             Console.WriteLine("Removing an existing a car.\nEnter the id:");
-            int.TryParse(Console.ReadLine(), out int carIdRemove);
-            parking.RemoveCar(carIdRemove);
+            try
+            {
+                var carId = int.Parse(Console.ReadLine());
+                parking.RemoveCar(carId);
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input.");
+            }
+            catch (InvalidIdException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            catch (NegativeBalanceException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private void ReplenishBalanceOfCar()
         {
             Console.Clear();
             Console.WriteLine("Replenishing balance of an existing car.\nEnter Id of the car:");
-            int.TryParse(Console.ReadLine(), out int carIdRep);
-            Console.WriteLine("Enter amount to replenish.");
-            double.TryParse(Console.ReadLine(), out double amount);
-            parking.ReplenishCarBalance(carIdRep, amount);
+            try
+            {
+                var carId = int.Parse(Console.ReadLine());
+                Console.WriteLine("Enter amount to replenish.");
+                var amount = double.Parse(Console.ReadLine());
+
+                parking.ReplenishCarBalance(carId, amount);
+            }
+            catch (FormatException)
+            {
+                Console.WriteLine("Invalid input.");
+            }
+            catch (InvalidIdException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            catch (NegativeBalanceException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private void ShowListOfParkedCars()
         {
             Console.Clear();
-            parking.ShowParkedCars();
+            try
+            {
+                parking.ShowParkedCars();
+            }
+            catch (EmptyParkingException e)
+            {
+                Console.WriteLine(e.Message);
+            }
         }
 
         private void ShowNumberOfFreeSpaces()
