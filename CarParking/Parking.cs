@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,17 +11,23 @@ namespace CarParking
     public class Parking
     {
         private static Parking instance;
-        private Timer timer;
+        private readonly Timer paymentTimer;
+        private readonly Timer logTimer;
 
-        public List<Car> Cars { get; private set; }
+        private List<Car> Cars { get; }
         private List<Transaction> Transactions { get; }
-        public double Balance { get; private set; }
+        private double Balance { get; set; }
 
         private Parking()
         {
             Cars = new List<Car>();
+            paymentTimer = new Timer(PaymentAction, new object(), 0, Settings.Timeout);
+            logTimer = new Timer(LogTransaction, new object(), 0, Settings.TransactionTimeout);
             Transactions = new List<Transaction>();
-            timer = new Timer(PaymentAction, new object(), 0, Settings.Timeout);
+            if (File.Exists(Settings.PathToLogFile))
+            {
+                File.Delete(Settings.PathToLogFile);
+            }
         }
 
         public static Parking GetInstance()
@@ -32,11 +40,11 @@ namespace CarParking
             return instance;
         }
 
-        public void AddCar(CarType carType)
+        public void AddCar(CarType carType, double balance)
         {
             if (Cars.Count != Settings.ParkingSpace)
             {
-                var car = new Car(AssignId(), 0, carType);
+                var car = new Car(AssignId(), balance, carType);
 
                 Console.WriteLine($"Added car {car}");
 
@@ -127,7 +135,14 @@ namespace CarParking
             Console.WriteLine($"Parking balance is: {Balance}");
         }
 
-        private async void PaymentAction(object obj)
+        public double GetParkingIncomeForPastMinute()
+        {
+            var income = Transactions.Where(t => t.TransactionTime > DateTime.Now.AddMinutes(-1))
+                .Sum(s => s.Withdrawal);
+            return income;
+        }
+
+        private async void PaymentAction(object o)
         {
             await Task.Run(() =>
             {
@@ -138,14 +153,28 @@ namespace CarParking
                         double amountToWithdraw = car.Balance >= price ? price : price * Settings.Fine;
                         car.WithdrawBalance(amountToWithdraw);
                         Balance += amountToWithdraw;
+                        var transaction = new Transaction(DateTime.Now, car.Id, amountToWithdraw);
+                        Transactions.Add(transaction);
                     }
                 });
             });
         }
 
-        public void StopTimer()
+        private async void LogTransaction(object o)
         {
-            timer.Dispose();
+            await Task.Run(() =>
+                {
+                    using (StreamWriter sw = new StreamWriter(Settings.PathToLogFile, true))
+                    {
+                        sw.WriteLine($"{DateTime.Now}, income: {GetParkingIncomeForPastMinute()}");
+                    }
+                }
+            );
+        }
+
+        public void StopTimers()
+        {
+            paymentTimer.Dispose();
         }
     }
 }
