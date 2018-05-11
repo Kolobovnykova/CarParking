@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using CarParking.Entities;
 
 namespace CarParking
 {
@@ -17,7 +18,7 @@ namespace CarParking
         {
             Timeout = 3000;
             TransactionTimeout = 60000;
-            ParkingSpace = 12;
+            ParkingSpace = 4;
             Fine = 2;
             PathToLogFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Transactions.log");
 

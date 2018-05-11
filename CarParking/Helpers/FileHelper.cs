@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace CarParking
+namespace CarParking.Helpers
 {
     public static class FileHelper
     {

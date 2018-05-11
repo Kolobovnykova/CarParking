@@ -1,22 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CarParking.Exceptions;
+using CarParking.Helpers;
+using CarParking.Interfaces;
 
-namespace CarParking
+namespace CarParking.Entities
 {
-    public class Parking
+    public class Parking : IParking
     {
-        private static Parking instance;
+        private static readonly Lazy<Parking> instance = new Lazy<Parking>(() => new Parking());
         private readonly Timer paymentTimer;
         private readonly Timer logTimer;
 
-        private List<Car> Cars { get; }
-        private List<Transaction> Transactions { get; }
-        private double Balance { get; set; }
+        public List<Car> Cars { get; }
+        public List<Transaction> Transactions { get; }
+        public double Balance { get; private set; }
+
+        public delegate void ParkingStateHandler(object sender, ParkingEventArgs e);
+
+        public event ParkingStateHandler CarAdded;
+        public event ParkingStateHandler CarRemoved;
+        public event ParkingStateHandler BalanceAdded;
 
         private Parking()
         {
@@ -30,15 +38,9 @@ namespace CarParking
             }
         }
 
-        public static Parking GetInstance()
-        {
-            if (instance == null)
-            {
-                instance = new Parking();
-            }
+        public static Parking Instance => instance.Value;
 
-            return instance;
-        }
+        public double GetParkingBalance() => Balance;
 
         public void AddCar(CarType carType, double balance)
         {
@@ -46,13 +48,20 @@ namespace CarParking
             {
                 var car = new Car(AssignId(), balance, carType);
 
-                Console.WriteLine($"Added car {car}");
+                if (balance <= 0)
+                {
+                    throw new NegativeBalanceException("Car balance should be positive. Failed to add a car.");
+                }
 
                 Cars.Add(car);
+                if (CarAdded != null)
+                {
+                    CarAdded(this, new ParkingEventArgs("been added", car));
+                }
             }
             else
             {
-                Console.WriteLine("Not enough space to place a car.");
+                throw new NotEnoughSpaceException("Not enough space to place a car.");
             }
         }
 
@@ -61,18 +70,20 @@ namespace CarParking
             var car = Cars.FirstOrDefault(x => x.Id == carId);
             if (car == null)
             {
-                Console.WriteLine("Invalid Id. No cars with such Id found.");
-                return;
+                throw new InvalidIdException($"Invalid Id {carId}. No cars with such Id found.");
             }
 
             if (car.Balance < 0)
             {
-                Console.WriteLine($"Can't remove car with id {carId}, it has negative balance: {car.Balance}.");
-                return;
+                throw new NegativeBalanceException(
+                    $"Can't remove car with id {carId}, it has negative balance: {car.Balance}.");
             }
 
             Cars.Remove(car);
-            Console.WriteLine($"Removed car: {car}");
+            if (CarRemoved != null)
+            {
+                CarRemoved(this, new ParkingEventArgs("been removed", car));
+            }
         }
 
         public int GetFreeSpacesNumber()
@@ -85,20 +96,14 @@ namespace CarParking
             return Cars.Count;
         }
 
-        public void ShowParkedCars()
+        public List<Car> GetListOfParkedCars()
         {
             if (Cars.Count == 0)
             {
-                Console.WriteLine("No cars at the parking.");
+                throw new EmptyParkingException("No cars at the parking.");
             }
-            else
-            {
-                Console.WriteLine("List of cars parked:");
-                foreach (var car in Cars)
-                {
-                    Console.WriteLine(car);
-                }
-            }
+
+            return Cars;
         }
 
         public void ReplenishCarBalance(int carId, double amount)
@@ -107,11 +112,14 @@ namespace CarParking
             {
                 var car = Cars.FirstOrDefault(x => x.Id == carId);
                 car.ReplenishBalance(amount);
-                Console.WriteLine("Added to car balance.");
+                if (BalanceAdded != null)
+                {
+                    BalanceAdded(this, new ParkingEventArgs("its balance replenished", car));
+                }
             }
             else
             {
-                Console.WriteLine("Invalid Id. No cars with such Id found.");
+                throw new InvalidIdException($"Invalid Id {carId}. No cars with such Id found.");
             }
         }
 
@@ -128,11 +136,6 @@ namespace CarParking
             }
 
             return Cars.Last().Id + 1;
-        }
-
-        public void ShowParkingBalance()
-        {
-            Console.WriteLine($"Parking balance is: {Balance}");
         }
 
         public double GetParkingIncomeForPastMinute()
@@ -153,8 +156,7 @@ namespace CarParking
                         double amountToWithdraw = car.Balance >= price ? price : price * Settings.Fine;
                         car.WithdrawBalance(amountToWithdraw);
                         Balance += amountToWithdraw;
-                        var transaction = new Transaction(DateTime.Now, car.Id, amountToWithdraw);
-                        Transactions.Add(transaction);
+                        Transactions.Add(new Transaction(DateTime.Now, car.Id, amountToWithdraw));
                     }
                 });
             });
@@ -175,6 +177,7 @@ namespace CarParking
         public void StopTimers()
         {
             paymentTimer.Dispose();
+            logTimer.Dispose();
         }
     }
 }
